@@ -1,0 +1,195 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drowsiness Detection</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .metrics {
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .metrics p {
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        #alertBox {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: none;
+        }
+
+        #status {
+            text-align: center;
+        }
+
+        body {
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="text-center">Drowsiness Detection</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="video-container">
+                            <video id="videoElement" autoplay playsinline style="width: 100%;"></video>
+                            <canvas id="canvas" style="display: none;"></canvas>
+                        </div>
+                        <div class="metrics mt-3">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p>Left EAR: <span id="leftEAR">0.00</span></p>
+                                    <p>Right EAR: <span id="rightEAR">0.00</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p>Average EAR: <span id="avgEAR">0.00</span></p>
+                                    <p>MAR: <span id="MAR">0.00</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="status" class="alert alert-info mt-3">Initializing...</div>
+                        <div id="alertBox" class="alert alert-danger mt-3" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap and other scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let ws = null;
+        const videoElement = document.getElementById('videoElement');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const alertBox = document.getElementById('alertBox');
+        const statusDiv = document.getElementById('status');
+        let isProcessing = false;
+
+        async function setupWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/drowsiness/`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function(e) {
+                console.log('WebSocket connected');
+                statusDiv.textContent = 'Connected. Starting camera...';
+                setupCamera();
+            };
+            
+            ws.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                updateMetrics(data);
+                if (data.alert) {
+                    showAlert(data.alert.message);
+                }
+                isProcessing = false;
+            };
+            
+            ws.onclose = function(e) {
+                console.log('WebSocket disconnected');
+                statusDiv.textContent = 'Connection lost. Reconnecting...';
+                setTimeout(setupWebSocket, 1000);
+            };
+
+            ws.onerror = function(e) {
+                console.error('WebSocket error:', e);
+                statusDiv.textContent = 'Connection error. Retrying...';
+            };
+        }
+
+        function updateMetrics(data) {
+            if (data.face_detected) {
+                document.getElementById('leftEAR').textContent = data.ear_left.toFixed(2);
+                document.getElementById('rightEAR').textContent = data.ear_right.toFixed(2);
+                document.getElementById('avgEAR').textContent = data.ear_avg.toFixed(2);
+                document.getElementById('MAR').textContent = data.mar.toFixed(2);
+                statusDiv.style.display = 'none';
+            } else {
+                statusDiv.textContent = 'No face detected';
+                statusDiv.style.display = 'block';
+            }
+        }
+
+        function showAlert(message) {
+            alertBox.textContent = message;
+            alertBox.style.display = 'block';
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 3000);
+        }
+
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: 640,
+                        height: 480,
+                        facingMode: 'user'
+                    } 
+                });
+                videoElement.srcObject = stream;
+                
+                videoElement.onloadedmetadata = function(e) {
+                    canvas.width = videoElement.videoWidth;
+                    canvas.height = videoElement.videoHeight;
+                    statusDiv.textContent = 'Starting detection...';
+                    sendFrames();
+                };
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                statusDiv.textContent = 'Error: Could not access camera';
+            }
+        }
+
+        function sendFrames() {
+            if (!ws || ws.readyState !== WebSocket.OPEN || isProcessing) {
+                requestAnimationFrame(sendFrames);
+                return;
+            }
+
+            try {
+                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                const imageData = canvas.toDataURL('image/jpeg', 0.7);
+                
+                ws.send(JSON.stringify({
+                    type: 'frame',
+                    image: imageData
+                }));
+                
+                isProcessing = true;
+            } catch (error) {
+                console.error('Error sending frame:', error);
+            }
+            
+            requestAnimationFrame(sendFrames);
+        }
+
+        document.addEventListener('DOMContentLoaded', setupWebSocket);
+    </script>
+</body>
+</html>
+

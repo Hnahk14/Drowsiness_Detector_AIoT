@@ -1,0 +1,107 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="fonts/icomoon/style.css">
+    <link rel="stylesheet" href="css/owl.carousel.min.css">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <title>Login #2</title>
+  </head>
+  <body>
+
+  <div class="d-lg-flex half">
+    <div class="bg order-1 order-md-2" style="background-image: url('images/bg_2.png');"></div>
+    <div class="contents order-2 order-md-1">
+      <div class="container">
+        <div class="row align-items-center justify-content-center">
+            <div class="col-md-7">
+                <h3>Login to <strong>Our website</strong></h3>
+                <p class="mb-4">Welcome!</p>
+
+                <!-- Radio buttons để chuyển tab -->
+                <div class="form-toggle text-center mb-4">
+                    <input type="radio" name="form-toggle" id="show-login" checked hidden>
+                    <input type="radio" name="form-toggle" id="show-register" hidden>
+
+                    <label for="show-login" class="btn btn-outline-primary mr-2">Login</label>
+                    <label for="show-register" class="btn btn-outline-secondary">Register</label>
+
+                    <!-- Login Form -->
+                    <div class="toggle-form login-form">
+                        <form action="#" method="post">
+                            <div class="form-group first">
+                                <label for="username">Username</label>
+                                <input type="text" class="form-control" placeholder="your-email@gmail.com" id="username">
+                            </div>
+                            <div class="form-group last mb-3">
+                                <label for="password">Password</label>
+                                <input type="password" class="form-control" placeholder="Your Password" id="password">
+                            </div>
+                            <input type="submit" value="Log In" class="btn btn-block btn-primary">
+                        </form>
+                    </div>
+
+                    <!-- Register Form -->
+                    <div class="toggle-form register-form">
+                        <form action="#" method="post">
+                            <div class="form-group first">
+                                <label for="reg-username">Username</label>
+                                <input type="text" class="form-control" placeholder="Enter username" id="reg-username">
+                            </div>
+                            <div class="form-group">
+                                <label for="reg-email">Email</label>
+                                <input type="email" class="form-control" placeholder="Enter email" id="reg-email">
+                            </div>
+                            <div class="form-group last mb-3">
+                                <label for="reg-password">Password</label>
+                                <input type="password" class="form-control" placeholder="Create password" id="reg-password">
+                            </div>
+                            <input type="submit" value="Register" class="btn btn-block btn-secondary">
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="js/jquery-3.3.1.min.js"></script>
+  <script src="js/popper.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+  <script src="js/main.js"></script>
+
+  <!-- ✅ JavaScript toggle login/register -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const loginForm = document.querySelector(".login-form");
+      const registerForm = document.querySelector(".register-form");
+
+      const loginBtn = document.getElementById("show-login");
+      const registerBtn = document.getElementById("show-register");
+
+      function toggleForms() {
+        if (loginBtn.checked) {
+          loginForm.style.display = "block";
+          registerForm.style.display = "none";
+        } else if (registerBtn.checked) {
+          loginForm.style.display = "none";
+          registerForm.style.display = "block";
+        }
+      }
+
+      loginBtn.addEventListener("change", toggleForms);
+      registerBtn.addEventListener("change", toggleForms);
+
+      toggleForms(); // chạy lần đầu
+    });
+  </script>
+
+  </body>
+</html>
